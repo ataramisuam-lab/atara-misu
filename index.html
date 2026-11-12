@@ -372,5 +372,43 @@ h3{font-weight:700}
 })();
 </script>
 
+<script>
+(function(){
+  // Visit log → Google Sheet. Only runs on the live site, once the web-app address is filled in.
+  var EP='https://script.google.com/macros/s/AKfycbx7kLdMF64aJLURMqw-zMfRFmC6RcWZKzCGryawj0ThWROeGMTCNu6_LV7dsw4gsjXt/exec';
+  if(EP.indexOf('https://script.google.com/')!==0) return;
+  var q=new URLSearchParams(location.search), ua=navigator.userAgent;
+  function sg(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function ss(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}
+
+  // source: ?src= (or utm_source) → in-app browser → referring site → "ישיר"
+  var src=q.get('src')||q.get('utm_source')||sg('am_src')||'';
+  if(!src){
+    if(/Instagram/i.test(ua)) src='instagram';
+    else if(/FBAN|FBAV|FB_IAB/i.test(ua)) src='facebook';
+    else if(/WhatsApp/i.test(ua)) src='whatsapp';
+    else if(/TikTok|musical_ly|BytedanceWebview/i.test(ua)) src='tiktok';
+  }
+  var ref='';
+  try{ if(document.referrer){ var h=new URL(document.referrer).hostname; if(h!==location.hostname) ref=h; } }catch(e){}
+  if(!src&&ref) src=ref.replace(/^(www|l|lm|m)\./,'');
+  var camp=q.get('c')||q.get('utm_campaign')||sg('am_c')||'';
+  if(src) ss('am_src',src);
+  if(camp) ss('am_c',camp);
+
+  var vid='';
+  try{ vid=localStorage.getItem('am_vid'); if(!vid){ vid=Math.random().toString(36).slice(2,10); localStorage.setItem('am_vid',vid); } }catch(e){}
+  var dev=/iPhone|iPad/i.test(ua)?'אייפון':/Android/i.test(ua)?'אנדרואיד':'מחשב';
+  var names={home:'בית',designs:'עיצובים',recipes:'מתכונים',links:'קישורים'};
+  function cur(){ return names[location.hash.slice(1)]||'בית'; }
+  function send(ev){
+    try{ fetch(EP,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({event:ev,src:src,campaign:camp,ref:ref,device:dev,vid:vid,screen:cur()})}); }catch(e){}
+  }
+  send('כניסה');
+  window.addEventListener('hashchange',function(){ if(cur()!=='בית') send('צפייה בלשונית'); });
+  document.addEventListener('click',function(e){ var a=e.target.closest&&e.target.closest('a.wa'); if(a) send('לחיצה על וואטסאפ'); },true);
+})();
+</script>
 </body>
 </html>
